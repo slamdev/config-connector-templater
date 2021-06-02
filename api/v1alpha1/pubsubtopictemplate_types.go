@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,8 +27,7 @@ import (
 
 // PubSubTopicTemplateStatus defines the observed state of PubSubTopicTemplate
 type PubSubTopicTemplateStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Ref v1.ObjectReference `json:"ref,omitempty"`
 }
 
 //+kubebuilder:object:root=true

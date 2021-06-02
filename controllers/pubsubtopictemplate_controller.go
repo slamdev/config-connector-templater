@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,5 +59,6 @@ func (r *PubSubTopicTemplateReconciler) Reconcile(ctx context.Context, req ctrl.
 func (r *PubSubTopicTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configconnectortemplaterv1alpha1.PubSubTopicTemplate{}).
+		Owns(&v1beta1.PubSubTopic{}).
 		Complete(r)
 }
