@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	pubsub "github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -43,6 +44,8 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	utilruntime.Must(pubsub.AddToScheme(scheme))
 
 	utilruntime.Must(configconnectortemplaterv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
