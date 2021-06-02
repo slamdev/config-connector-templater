@@ -9,6 +9,32 @@ rules:
 - apiGroups:
   - config-connector-templater.slamdev.net
   resources:
+  - pubsubsubscriptiontemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config-connector-templater.slamdev.net
+  resources:
+  - pubsubsubscriptiontemplates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config-connector-templater.slamdev.net
+  resources:
+  - pubsubsubscriptiontemplates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config-connector-templater.slamdev.net
+  resources:
   - pubsubtopictemplates
   verbs:
   - create

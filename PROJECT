@@ -16,4 +16,13 @@ resources:
   kind: PubSubTopicTemplate
   path: github.com/slamdev/config-connector-templater/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: slamdev.net
+  group: config-connector-templater
+  kind: PubSubSubscriptionTemplate
+  path: github.com/slamdev/config-connector-templater/api/v1alpha1
+  version: v1alpha1
 version: "3"

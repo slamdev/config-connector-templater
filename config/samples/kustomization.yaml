@@ -1,4 +1,5 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
 - config-connector-templater_v1alpha1_pubsubtopictemplate.yaml
+- config-connector-templater_v1alpha1_pubsubsubscriptiontemplate.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
