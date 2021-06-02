@@ -58,3 +58,27 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - pubsub.cnrm.cloud.google.com
+  resources:
+  - pubsubsubscriptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pubsub.cnrm.cloud.google.com
+  resources:
+  - pubsubtopics
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

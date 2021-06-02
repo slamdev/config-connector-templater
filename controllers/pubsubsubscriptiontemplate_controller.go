@@ -37,6 +37,7 @@ type PubSubSubscriptionTemplateReconciler struct {
 //+kubebuilder:rbac:groups=config-connector-templater.slamdev.net,resources=pubsubsubscriptiontemplates,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config-connector-templater.slamdev.net,resources=pubsubsubscriptiontemplates/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=config-connector-templater.slamdev.net,resources=pubsubsubscriptiontemplates/finalizers,verbs=update
+//+kubebuilder:rbac:groups=pubsub.cnrm.cloud.google.com,resources=pubsubsubscriptions,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
