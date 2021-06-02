@@ -17,20 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// PubSubTopicTemplateSpec defines the desired state of PubSubTopicTemplate
-type PubSubTopicTemplateSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of PubSubTopicTemplate. Edit pubsubtopictemplate_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
 
 // PubSubTopicTemplateStatus defines the observed state of PubSubTopicTemplate
 type PubSubTopicTemplateStatus struct {
@@ -46,7 +38,7 @@ type PubSubTopicTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PubSubTopicTemplateSpec   `json:"spec,omitempty"`
+	Spec   v1beta1.PubSubTopicSpec   `json:"spec,omitempty"`
 	Status PubSubTopicTemplateStatus `json:"status,omitempty"`
 }
 

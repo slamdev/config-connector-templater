@@ -35,11 +35,46 @@ spec:
           metadata:
             type: object
           spec:
-            description: PubSubTopicTemplateSpec defines the desired state of PubSubTopicTemplate
             properties:
-              foo:
-                description: Foo is an example field of PubSubTopicTemplate. Edit
-                  pubsubtopictemplate_types.go to remove/update
+              kmsKeyRef:
+                description: " The KMSCryptoKey to be used to protect access to messages
+                  published \ton this topic. Your project's Pub/Sub service account
+                  \t('service-{{PROJECT_NUMBER}}@gcp-sa-pubsub.iam.gserviceaccount.com')
+                  \tmust have 'roles/cloudkms.cryptoKeyEncrypterDecrypter' to use
+                  this \tfeature."
+                properties:
+                  external:
+                    description: ' The external name of the referenced resource'
+                    type: string
+                  name:
+                    description: ' Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                  namespace:
+                    description: ' Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                    type: string
+                type: object
+              messageStoragePolicy:
+                description: " Policy constraining the set of Google Cloud Platform
+                  regions where \tmessages published to the topic may be stored. If
+                  not present, then no \tconstraints are in effect."
+                properties:
+                  allowedPersistenceRegions:
+                    description: " A list of IDs of GCP regions where messages that
+                      are published to \tthe topic may be persisted in storage. Messages
+                      published by \tpublishers running in non-allowed GCP regions
+                      (or running outside \tof GCP altogether) will be routed for
+                      storage in one of the \tallowed regions. An empty list means
+                      that no regions are allowed, \tand is not a valid configuration."
+                    items:
+                      type: string
+                    type: array
+                required:
+                - allowedPersistenceRegions
+                type: object
+              resourceID:
+                description: ' Immutable. Optional. The name of the resource. Used
+                  for creation and acquisition. When unset, the value of `metadata.name`
+                  is used as the default.'
                 type: string
             type: object
           status:
