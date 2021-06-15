@@ -81,18 +81,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.PubSubTopicTemplateReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "PubSubTopicTemplate")
-		os.Exit(1)
-	}
-	if err = (&controllers.PubSubSubscriptionTemplateReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "PubSubSubscriptionTemplate")
+	if err := controllers.CreateControllers(mgr); err != nil {
+		setupLog.Error(err, "unable to create controllers")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

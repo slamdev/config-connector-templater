@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
+	pubsub "github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,7 +38,7 @@ type PubSubSubscriptionTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   v1beta1.PubSubSubscriptionSpec   `json:"spec,omitempty"`
+	Spec   pubsub.PubSubSubscriptionSpec    `json:"spec,omitempty"`
 	Status PubSubSubscriptionTemplateStatus `json:"status,omitempty"`
 }
 

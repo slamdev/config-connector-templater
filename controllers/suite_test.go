@@ -17,7 +17,10 @@ limitations under the License.
 package controllers
 
 import (
+	pubsub "github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
+	"os"
 	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -30,7 +33,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	configconnectortemplaterv1alpha1 "github.com/slamdev/config-connector-templater/api/v1alpha1"
+	api "github.com/slamdev/config-connector-templater/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -44,6 +47,11 @@ var testEnv *envtest.Environment
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" && os.Getenv("ENVTEST_ASSETS_DIR") == "" {
+		// allows to run tests from GoLand
+		os.Setenv("KUBEBUILDER_ASSETS", "../testbin/bin")
+	}
+
 	RunSpecsWithDefaultAndCustomReporters(t,
 		"Controller Suite",
 		[]Reporter{printer.NewlineReporter{}})
@@ -54,7 +62,10 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "config", "crd", "bases"),
+			filepath.Join("..", "testbin", "crd"),
+		},
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -62,10 +73,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = configconnectortemplaterv1alpha1.AddToScheme(scheme.Scheme)
+	err = pubsub.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = configconnectortemplaterv1alpha1.AddToScheme(scheme.Scheme)
+	err = api.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
@@ -74,6 +85,19 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme.Scheme,
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	err = CreateControllers(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		defer GinkgoRecover()
+		err = k8sManager.Start(ctrl.SetupSignalHandler())
+		Expect(err).ToNot(HaveOccurred())
+	}()
 }, 60)
 
 var _ = AfterSuite(func() {
