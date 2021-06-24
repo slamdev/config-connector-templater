@@ -102,27 +102,27 @@ func createTemplatedResource(cli CliCli, src client.Object, target client.Object
 }
 
 func setSpec(target interface{}, spec interface{}) {
-	v := reflect.ValueOf(target)
+	v := reflect.ValueOf(target).Elem()
 	f := v.FieldByName("Spec")
 	f.Set(reflect.ValueOf(spec))
 }
 
 func getSpec(target interface{}) interface{} {
-	v := reflect.ValueOf(target)
+	v := reflect.ValueOf(target).Elem()
 	f := v.FieldByName("Spec")
-	return f.Elem().Interface()
+	return f.Interface()
 }
 
 func setStatusRef(target interface{}, ref corev1.ObjectReference) {
-	v := reflect.ValueOf(target)
+	v := reflect.ValueOf(target).Elem()
 	statusValue := v.FieldByName("Status")
 	refValue := statusValue.FieldByName("Ref")
 	refValue.Set(reflect.ValueOf(ref))
 }
 
 func getStatusRef(target interface{}) corev1.ObjectReference {
-	v := reflect.ValueOf(target)
+	v := reflect.ValueOf(target).Elem()
 	statusValue := v.FieldByName("Status")
 	refValue := statusValue.FieldByName("Ref")
-	return refValue.Elem().Interface().(corev1.ObjectReference)
+	return refValue.Interface().(corev1.ObjectReference)
 }

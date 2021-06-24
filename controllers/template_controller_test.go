@@ -19,76 +19,136 @@ package controllers
 import (
 	"context"
 	pubsub "github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
-	"time"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	api "github.com/slamdev/config-connector-templater/api/v1alpha1"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	api "github.com/slamdev/config-connector-templater/api/v1alpha1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"os"
+	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"testing"
+	"time"
 )
 
-var _ = Describe("Template controller", func() {
+var k8sClient client.Client
 
-	// Define utility constants for object names and testing timeouts/durations and intervals.
+func TestTemplateReconciler(t *testing.T) {
+	ctx := context.Background()
+
+	stringPtr := func(s string) *string {
+		return &s
+	}
+
 	const (
 		TemplateResName = "test-template"
 		Namespace       = "default"
-		Ref             = "{{ .metadata.namespace }}.test-ref"
+		TemplatedResID  = "{{ .metadata.namespace }}.test-ref"
+		RenderedResID   = Namespace + ".test-ref"
 
 		timeout  = time.Second * 10
 		interval = time.Millisecond * 250
 	)
 
-	Context("When updating CronJob Status", func() {
-		It("Should increase CronJob Status.Active count when new Jobs are created", func() {
-			By("By creating a new CronJob")
-			ctx := context.Background()
+	res := &api.PubSubTopicTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "config-connector-templater.slamdev.net/v1alpha1",
+			Kind:       "PubSubTopicTemplate",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      TemplateResName,
+			Namespace: Namespace,
+		},
+		Spec: pubsub.PubSubTopicSpec{
+			ResourceID: stringPtr(TemplatedResID),
+		},
+	}
 
-			stringPtr := func(s string) *string {
-				return &s
-			}
+	assert.NoError(t, k8sClient.Create(ctx, res))
 
-			cronJob := &api.PubSubTopicTemplate{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "config-connector-templater.slamdev.net/v1alpha1",
-					Kind:       "PubSubTopicTemplate",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      TemplateResName,
-					Namespace: Namespace,
-				},
-				Spec: pubsub.PubSubTopicSpec{
-					ResourceID: stringPtr(Ref),
-				},
-			}
-			Expect(k8sClient.Create(ctx, cronJob)).Should(Succeed())
+	lookupKey := types.NamespacedName{Name: TemplateResName, Namespace: Namespace}
+	createdRes := &api.PubSubTopicTemplate{}
 
-			cronjobLookupKey := types.NamespacedName{Name: TemplateResName, Namespace: Namespace}
-			createdCronjob := &api.PubSubTopicTemplate{}
+	assert.Eventually(t, func() bool {
+		err := k8sClient.Get(ctx, lookupKey, createdRes)
+		if err != nil {
+			return false
+		}
+		return true
+	}, timeout, interval)
 
-			// We'll need to retry getting this newly created CronJob, given that creation may not immediately happen.
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)
-				if err != nil {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-			// Let's make sure our Schedule string value was properly converted/handled.
-			Expect(createdCronjob.Spec.ResourceID).Should(Equal(stringPtr(Ref)))
+	assert.Equal(t, res.Spec.ResourceID, createdRes.Spec.ResourceID)
 
-			//
-			By("By checking that the CronJob has one active Job")
-			Eventually(func() (string, error) {
-				res := &pubsub.PubSubTopic{}
-				err := k8sClient.Get(ctx, cronjobLookupKey, res)
-				if err != nil {
-					return "", err
-				}
-				return *res.Spec.ResourceID, nil
-			}, timeout, interval).Should(Equal(Ref), "should list our active job %s in the active jobs list in status", Ref)
-		})
-	})
-})
+	renderedRes := &pubsub.PubSubTopic{}
+
+	assert.Eventually(t, func() bool {
+		if err := k8sClient.Get(ctx, lookupKey, renderedRes); err != nil {
+			return false
+		}
+		return true
+	}, timeout, interval)
+
+	assert.Equal(t, RenderedResID, *renderedRes.Spec.ResourceID)
+}
+
+func TestMain(m *testing.M) {
+	// setUp
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" && os.Getenv("ENVTEST_ASSETS_DIR") == "" {
+		// allows to run tests from GoLand
+		_ = os.Setenv("KUBEBUILDER_ASSETS", "../testbin/bin")
+	}
+	logf.SetLogger(zap.New(zap.WriteTo(os.Stdout), zap.UseDevMode(true)))
+	testEnv := &envtest.Environment{
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "config", "crd", "bases"),
+			filepath.Join("..", "testbin", "crd"),
+		},
+		ErrorIfCRDPathMissing: true,
+	}
+
+	cfg, err := testEnv.Start()
+	if err != nil {
+		panic(err)
+	}
+
+	if err := pubsub.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
+
+	if err := api.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
+
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		panic(err)
+	}
+
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		panic(err)
+	}
+
+	if err := CreateControllers(k8sManager); err != nil {
+		panic(err)
+	}
+
+	go func() {
+		if err := k8sManager.Start(ctrl.SetupSignalHandler()); err != nil {
+			panic(err)
+		}
+	}()
+
+	code := m.Run()
+
+	// tearDown
+	if err := testEnv.Stop(); err != nil {
+		panic(err)
+	}
+
+	os.Exit(code)
+}
