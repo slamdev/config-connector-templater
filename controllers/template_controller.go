@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -73,13 +74,11 @@ func (r *TemplateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *TemplateReconciler) initTemplateType() client.Object {
-	t := &r.TemplateType
-	return *t
+	return reflect.New(reflect.ValueOf(r.TemplateType).Elem().Type()).Interface().(client.Object)
 }
 
 func (r *TemplateReconciler) initRenderType() client.Object {
-	t := &r.RenderType
-	return *t
+	return reflect.New(reflect.ValueOf(r.RenderType).Elem().Type()).Interface().(client.Object)
 }
 
 // SetupWithManager sets up the controller with the Manager.

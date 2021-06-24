@@ -93,6 +93,19 @@ func TestTemplateReconciler(t *testing.T) {
 	}, timeout, interval)
 
 	assert.Equal(t, RenderedResID, *renderedRes.Spec.ResourceID)
+
+	assert.NoError(t, k8sClient.Get(ctx, lookupKey, res))
+	res.Spec.MessageStoragePolicy = &pubsub.TopicMessageStoragePolicy{AllowedPersistenceRegions: []string{"test"}}
+	assert.NoError(t, k8sClient.Update(ctx, res))
+
+	assert.Eventually(t, func() bool {
+		if err := k8sClient.Get(ctx, lookupKey, renderedRes); err != nil {
+			return false
+		}
+		return renderedRes.Spec.MessageStoragePolicy != nil
+	}, timeout, interval)
+
+	assert.Equal(t, res.Spec.MessageStoragePolicy.AllowedPersistenceRegions, renderedRes.Spec.MessageStoragePolicy.AllowedPersistenceRegions)
 }
 
 func TestMain(m *testing.M) {
