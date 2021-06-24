@@ -24,6 +24,7 @@ import (
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 type CliCli interface {
@@ -90,8 +91,19 @@ func createTemplatedResource(cli CliCli, src client.Object, target client.Object
 	}
 	target.SetName(src.GetName())
 	target.SetNamespace(src.GetNamespace())
-	target.SetLabels(src.GetLabels())
-	target.SetAnnotations(src.GetAnnotations())
+
+	for k, v := range src.GetAnnotations() {
+		if strings.Contains(k, "fluxcd.io") || strings.Contains(k, "last-applied-configuration") {
+			continue
+		}
+		target.GetAnnotations()[k] = v
+	}
+	for k, v := range src.GetLabels() {
+		if strings.Contains(k, "fluxcd.io") {
+			continue
+		}
+		target.GetLabels()[k] = v
+	}
 
 	setSpec(target, spec)
 
