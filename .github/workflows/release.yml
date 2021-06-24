@@ -1,0 +1,19 @@
+name: release
+
+on:
+  push:
+    branches:
+      - '!*'
+    tags:
+      - '*.*.*'
+
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Docker Login
+        run: echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u slamdev --password-stdin
+      - run: |
+          export RELEASE_VERSION="${GITHUB_REF##*/}"
+          make docker-build docker-push VERSION="${RELEASE_VERSION}"
