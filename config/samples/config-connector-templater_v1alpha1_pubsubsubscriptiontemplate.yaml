@@ -1,7 +1,9 @@
 apiVersion: config-connector-templater.slamdev.net/v1alpha1
 kind: PubSubSubscriptionTemplate
 metadata:
-  name: pubsubsubscriptiontemplate-sample
+  name: notifications
+  namespace: team1
+  annotations:
+    service-name: super-service
 spec:
-  # Add fields here
-  foo: bar
+  resourceID: "{{ .metadata.namespace }}.{{ index .metadata.annotations "service-name" }}.{{ .metadata.name }}"

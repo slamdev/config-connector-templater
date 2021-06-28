@@ -7,7 +7,7 @@ Kubernetes operator that templates GCP Config Connector resources
 Creating a resource like this:
 
 ```yaml
-apiVersion: v1
+apiVersion: config-connector-templater.slamdev.net/v1alpha1
 kind: PubSubTopicTemplate
 metadata:
   name: notifications
