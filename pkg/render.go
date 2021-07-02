@@ -31,59 +31,49 @@ func Render(templated interface{}, data interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("failed to parse template params; %w", err)
 	}
 
-	if err := renderValue(reflect.ValueOf(templated), params); err != nil {
-		return nil, fmt.Errorf("failed to render spec; %w", err)
+	jsonStr, err := json.Marshal(templated)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal struct; %w", err)
 	}
-	return templated, nil
+
+	rendered, err := renderString(string(jsonStr), params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render string; %w", err)
+	}
+
+	structType := reflect.TypeOf(templated)
+	outPtr := reflect.New(structType).Interface()
+
+	if err := json.Unmarshal([]byte(rendered), outPtr); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal struct to map; %w", err)
+	}
+
+	out := reflect.ValueOf(outPtr).Elem().Interface()
+
+	return out, nil
+}
+
+func renderString(str string, params map[string]interface{}) (string, error) {
+	tpl := template.New("_").Funcs(sprig.FuncMap())
+	parsed, err := tpl.Parse(str)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template; %w", err)
+	}
+	rendered := new(strings.Builder)
+	if err := parsed.Execute(rendered, params); err != nil {
+		return "", fmt.Errorf("failed to execute template; %w", err)
+	}
+	return rendered.String(), nil
 }
 
 func structToMap(in interface{}) (map[string]interface{}, error) {
 	var out map[string]interface{}
-	inrec, err := json.Marshal(in)
+	jsonStr, err := json.Marshal(in)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal struct; %w", err)
 	}
-	if err := json.Unmarshal(inrec, &out); err != nil {
+	if err := json.Unmarshal(jsonStr, &out); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal struct to map; %w", err)
 	}
 	return out, nil
-}
-
-func renderValue(v reflect.Value, data interface{}) error {
-	switch v.Kind() {
-	case reflect.String:
-		tpl := template.New("_").Funcs(sprig.FuncMap())
-		parsed, err := tpl.Parse(v.String())
-		if err != nil {
-			return fmt.Errorf("failed to parse template; %w", err)
-		}
-		rendered := new(strings.Builder)
-		if err := parsed.Execute(rendered, data); err != nil {
-			return fmt.Errorf("failed to execute template; %w", err)
-		}
-		v.SetString(rendered.String())
-		return nil
-	case reflect.Struct:
-		for i := 0; i < v.NumField(); i++ {
-			f := v.Field(i)
-			if err := renderValue(f, data); err != nil {
-				return fmt.Errorf("failed to render struct; %w", err)
-			}
-		}
-		return nil
-	case reflect.Ptr:
-		if err := renderValue(v.Elem(), data); err != nil {
-			return fmt.Errorf("failed to render value; %w", err)
-		}
-		return nil
-	case reflect.Slice:
-		for i := 0; i < v.Len(); i++ {
-			if err := renderValue(v.Index(i), data); err != nil {
-				return fmt.Errorf("failed to render value; %w", err)
-			}
-		}
-		return nil
-	default:
-		return fmt.Errorf("unrecognized type: %s", v.Kind())
-	}
 }
