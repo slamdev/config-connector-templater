@@ -92,12 +92,15 @@ func createTemplatedResource(cli CliCli, src client.Object, target client.Object
 	target.SetName(src.GetName())
 	target.SetNamespace(src.GetNamespace())
 
+	target.SetAnnotations(make(map[string]string))
 	for k, v := range src.GetAnnotations() {
 		if strings.Contains(k, "fluxcd.io") || strings.Contains(k, "last-applied-configuration") {
 			continue
 		}
 		target.GetAnnotations()[k] = v
 	}
+
+	target.SetLabels(make(map[string]string))
 	for k, v := range src.GetLabels() {
 		if strings.Contains(k, "fluxcd.io") {
 			continue
