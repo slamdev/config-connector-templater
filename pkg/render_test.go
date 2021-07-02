@@ -36,11 +36,11 @@ func TestRender(t *testing.T) {
 		},
 		Spec: pubsub.PubSubTopicSpec{
 			KmsKeyRef: &v1alpha1.ResourceRef{
-				Name:      "ref-name",
+				Name:      "{{ .metadata.namespace }}-ref-name",
 				Namespace: "ref-ns",
 			},
 			MessageStoragePolicy: &pubsub.TopicMessageStoragePolicy{
-				AllowedPersistenceRegions: []string{"r1, r2"},
+				AllowedPersistenceRegions: []string{"{{ .metadata.namespace }}-r1"},
 			},
 			ResourceID: stringPtr("{{ .metadata.namespace }}.test-ref"),
 		},
@@ -53,6 +53,7 @@ func TestRender(t *testing.T) {
 	resSpec := res.(pubsub.PubSubTopicSpec)
 
 	assert.Equal(t, "test-ns.test-ref", *resSpec.ResourceID)
-	assert.Equal(t, *template.Spec.KmsKeyRef, *resSpec.KmsKeyRef)
-	assert.Equal(t, *template.Spec.MessageStoragePolicy, *resSpec.MessageStoragePolicy)
+	assert.Equal(t, "test-ns-r1", resSpec.MessageStoragePolicy.AllowedPersistenceRegions[0])
+	assert.Equal(t, "test-ns-ref-name", resSpec.KmsKeyRef.Name)
+	assert.Equal(t, template.Spec.KmsKeyRef.Namespace, resSpec.KmsKeyRef.Namespace)
 }

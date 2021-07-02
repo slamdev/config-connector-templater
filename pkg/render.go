@@ -30,7 +30,8 @@ func Render(templated interface{}, data interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse template params; %w", err)
 	}
-	if err := renderStruct(reflect.ValueOf(templated), params); err != nil {
+
+	if err := renderValue(reflect.ValueOf(templated), params); err != nil {
 		return nil, fmt.Errorf("failed to render spec; %w", err)
 	}
 	return templated, nil
@@ -38,26 +39,19 @@ func Render(templated interface{}, data interface{}) (interface{}, error) {
 
 func structToMap(in interface{}) (map[string]interface{}, error) {
 	var out map[string]interface{}
-	inrec, _ := json.Marshal(in)
+	inrec, err := json.Marshal(in)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal struct; %w", err)
+	}
 	if err := json.Unmarshal(inrec, &out); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal struct to map; %w", err)
 	}
 	return out, nil
 }
 
-func renderStruct(v reflect.Value, data interface{}) error {
-	s := v
-	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		if err := renderValue(f, data); err != nil {
-			return fmt.Errorf("failed to render struct; %w", err)
-		}
-	}
-	return nil
-}
-
 func renderValue(v reflect.Value, data interface{}) error {
-	if v.Kind() == reflect.String && v.CanSet() {
+	switch v.Kind() {
+	case reflect.String:
 		tpl := template.New("_").Funcs(sprig.FuncMap())
 		parsed, err := tpl.Parse(v.String())
 		if err != nil {
@@ -68,22 +62,28 @@ func renderValue(v reflect.Value, data interface{}) error {
 			return fmt.Errorf("failed to execute template; %w", err)
 		}
 		v.SetString(rendered.String())
-	} else if v.Kind() == reflect.Struct {
-		x1 := reflect.ValueOf(v.Interface())
-		if err := renderStruct(x1, data); err != nil {
+		return nil
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			f := v.Field(i)
+			if err := renderValue(f, data); err != nil {
+				return fmt.Errorf("failed to render struct; %w", err)
+			}
+		}
+		return nil
+	case reflect.Ptr:
+		if err := renderValue(v.Elem(), data); err != nil {
 			return fmt.Errorf("failed to render value; %w", err)
 		}
-	} else if v.Kind() == reflect.Ptr {
-		el := v.Elem()
-		if el.Kind() == reflect.Struct {
-			if err := renderStruct(el, data); err != nil {
-				return fmt.Errorf("failed to render value; %w", err)
-			}
-		} else {
-			if err := renderValue(el, data); err != nil {
+		return nil
+	case reflect.Slice:
+		for i := 0; i < v.Len(); i++ {
+			if err := renderValue(v.Index(i), data); err != nil {
 				return fmt.Errorf("failed to render value; %w", err)
 			}
 		}
+		return nil
+	default:
+		return fmt.Errorf("unrecognized type: %s", v.Kind())
 	}
-	return nil
 }

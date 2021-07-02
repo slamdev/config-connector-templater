@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	gke "github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/k8s/v1alpha1"
 	pubsub "github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/pubsub/v1beta1"
 	api "github.com/slamdev/config-connector-templater/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -47,8 +48,15 @@ func TestTemplateReconciler(t *testing.T) {
 	const (
 		TemplateResName = "test-template"
 		Namespace       = "default"
-		TemplatedResID  = "{{ .metadata.namespace }}.test-ref"
-		RenderedResID   = Namespace + ".test-ref"
+
+		TemplatedResID = "{{ .metadata.namespace }}.test-ref"
+		RenderedResID  = Namespace + ".test-ref"
+
+		TemplatedRegion = "{{ .metadata.namespace }}.us"
+		RenderedRegion  = Namespace + ".us"
+
+		TemplatedKeyName = "{{ .metadata.namespace }}.kms"
+		RenderedKeyName  = Namespace + ".kms"
 
 		timeout  = time.Second * 10
 		interval = time.Millisecond * 250
@@ -65,6 +73,13 @@ func TestTemplateReconciler(t *testing.T) {
 		},
 		Spec: pubsub.PubSubTopicSpec{
 			ResourceID: stringPtr(TemplatedResID),
+			MessageStoragePolicy: &pubsub.TopicMessageStoragePolicy{
+				AllowedPersistenceRegions: []string{TemplatedRegion},
+			},
+			KmsKeyRef: &gke.ResourceRef{
+				Name:      TemplatedKeyName,
+				Namespace: Namespace,
+			},
 		},
 	}
 
@@ -93,6 +108,9 @@ func TestTemplateReconciler(t *testing.T) {
 	}, timeout, interval)
 
 	assert.Equal(t, RenderedResID, *renderedRes.Spec.ResourceID)
+	assert.Equal(t, RenderedRegion, renderedRes.Spec.MessageStoragePolicy.AllowedPersistenceRegions[0])
+	assert.Equal(t, RenderedKeyName, renderedRes.Spec.KmsKeyRef.Name)
+	assert.Equal(t, Namespace, renderedRes.Spec.KmsKeyRef.Namespace)
 
 	assert.NoError(t, k8sClient.Get(ctx, lookupKey, res))
 	res.Spec.MessageStoragePolicy = &pubsub.TopicMessageStoragePolicy{AllowedPersistenceRegions: []string{"test"}}
