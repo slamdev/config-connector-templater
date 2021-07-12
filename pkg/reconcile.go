@@ -24,6 +24,7 @@ import (
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
 )
 
@@ -53,6 +54,7 @@ func UpdateTargetResource(ctx context.Context, cli CliCli, src client.Object, ta
 		setSpec(target, resSpec)
 		err := cli.Update(ctx, target)
 		if err != nil {
+			log.FromContext(ctx).Info("changes detected", "src", resSpec, "dst", getSpec(target))
 			return fmt.Errorf("failed to update dest resource; %w", err)
 		}
 	}
