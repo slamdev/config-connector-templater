@@ -51,10 +51,10 @@ func UpdateTargetResource(ctx context.Context, cli CliCli, src client.Object, ta
 
 	// Update PubSubTopic if needed
 	if !reflect.DeepEqual(resSpec, getSpec(target)) {
+		log.FromContext(ctx).Info("changes detected", "src", resSpec, "dst", getSpec(target))
 		setSpec(target, resSpec)
 		err := cli.Update(ctx, target)
 		if err != nil {
-			log.FromContext(ctx).Info("changes detected", "src", resSpec, "dst", getSpec(target))
 			return fmt.Errorf("failed to update dest resource; %w", err)
 		}
 	}
