@@ -67,12 +67,11 @@ func UpdateTargetResource(ctx context.Context, cli CliCli, src client.Object, ta
 func updateStatusRef(ctx context.Context, cli CliCli, src client.Object, target client.Object) error {
 	// Build the PubSubTopicTemplate status ref with from PubSubTopic
 	ref := corev1.ObjectReference{
-		Kind:            src.GetObjectKind().GroupVersionKind().Kind,
-		Namespace:       src.GetNamespace(),
-		Name:            src.GetName(),
-		UID:             src.GetUID(),
-		APIVersion:      src.GetObjectKind().GroupVersionKind().Version,
-		ResourceVersion: src.GetResourceVersion(),
+		Kind:       src.GetObjectKind().GroupVersionKind().Kind,
+		Namespace:  src.GetNamespace(),
+		Name:       src.GetName(),
+		UID:        src.GetUID(),
+		APIVersion: src.GetObjectKind().GroupVersionKind().Version,
 	}
 
 	// Update status.Ref if needed
